@@ -1,0 +1,11 @@
+INSERT INTO "ADDRESS" ("STREET", "CITY", "UUID", "INSERTED_AT", "UPDATED_AT")
+  VALUES (' ', 'Seattle', '70ee1994-41a1-4b7b-85b2-924ffc836cb4', '', '');
+
+INSERT INTO "ADDRESS" ("STREET", "CITY", "UUID", "INSERTED_AT", "UPDATED_AT")
+  VALUES (' ', 'Helsinki', '0c4da69a-4da3-4481-8356-61398e5c729a', '', '');
+
+INSERT INTO "PERSON" ("NAME", "AGE", "ADDRESS_UUID", "UUID", "INSERTED_AT", "UPDATED_AT")
+  VALUES ('John Smith', 25, '70ee1994-41a1-4b7b-85b2-924ffc836cb4', '3104e3b9-708d-403d-ba9d-d78cd866bef6', '', '');
+
+INSERT INTO "PERSON" ("NAME", "AGE", "ADDRESS_UUID", "UUID", "INSERTED_AT", "UPDATED_AT")
+  VALUES ('Jane Smith', 23, '0c4da69a-4da3-4481-8356-61398e5c729a', 'b3f422f3-8aed-43a2-a52a-35fc0d41deae', '', '');
