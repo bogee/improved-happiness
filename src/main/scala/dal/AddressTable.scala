@@ -15,13 +15,6 @@ class AddressTable(tag: Tag)
     *
     * @return
     */
-  def uuid: Rep[String] =
-    column[String]("UUID", O.PrimaryKey)
-
-  /**
-    *
-    * @return
-    */
   def street: Rep[String] =
     column[String]("STREET")
 
@@ -31,6 +24,13 @@ class AddressTable(tag: Tag)
     */
   def city: Rep[String] =
     column[String]("CITY")
+
+  /**
+    *
+    * @return
+    */
+  def uuid: Rep[String] =
+  column[String]("UUID", O.PrimaryKey)
 
   /**
     *
@@ -57,4 +57,5 @@ class AddressTable(tag: Tag)
     insertedAt.?,
     updatedAt.?
   ) <> (Address.tupled, Address.unapply)
+
 }

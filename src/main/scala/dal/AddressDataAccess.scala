@@ -11,19 +11,87 @@ import slick.lifted.TableQuery
 
 class AddressDataAccess extends MappedColumnTypes {
 
+  implicit class AddressTableExtensions(t: AddressTable) {
+
+    /**
+      *
+      * @param sort
+      * @return
+      */
+    def mapOrderedColumn(sort: (String, String)) = {
+
+      sort match {
+        case (c, d) if c.equalsIgnoreCase("CITY") && d.equalsIgnoreCase("ASC") =>
+          t.city.asc
+        case (c, d) if c.equalsIgnoreCase("CITY") && d.equalsIgnoreCase("DESC") =>
+          t.city.desc
+        case (c, d) if c.equalsIgnoreCase("INSERTED_AT") && d.equalsIgnoreCase("ASC") =>
+          t.insertedAt.asc
+        case (c, d) if c.equalsIgnoreCase("INSERTED_AT") && d.equalsIgnoreCase("DESC") =>
+          t.insertedAt.desc
+        case (c, d) if c.equalsIgnoreCase("STREET") && d.equalsIgnoreCase("ASC") =>
+          t.street.asc
+        case (c, d) if c.equalsIgnoreCase("STREET") && d.equalsIgnoreCase("DESC") =>
+          t.street.desc
+        case (c, d) if c.equalsIgnoreCase("UPDATED_AT") && d.equalsIgnoreCase("ASC") =>
+          t.updatedAt.asc
+        case (c, d) if c.equalsIgnoreCase("UPDATED_AT") && d.equalsIgnoreCase("DESC") =>
+          t.updatedAt.desc
+      }
+
+    }
+
+  }
+
   implicit class AddressQueryExtensions[C[_]](q: Query[AddressTable, Address, C]) {
-    def withPersons = q.join(TableQuery[PersonTable]).on(_.uuid === _.addressUuid)
+
+    /**
+      *
+      * @return
+      */
+    def withPerson = {
+
+      q.join(TableQuery[PersonTable]).on(_.uuid === _.addressUuid)
+
+    }
+
+    /**
+      *
+      * @param pageNumber
+      * @param pageSize
+      * @return
+      */
+    def page(pageNumber: Long, pageSize: Long) = {
+
+      q.drop((pageNumber - 1) * pageSize).take(pageSize)
+
+    }
+
   }
 
   /**
     *
-    * @param uuid
+    * @param sort
+    * @param pageNumber
+    * @param pageSize
     * @return
     */
-  def findAddress(uuid: String): DBIO[Option[Address]] = {
-    AddressQueries.filterByUuid(uuid)
+  def page(sort: (String, String), pageNumber: Long, pageSize: Long): DBIO[Seq[(Address, Person)]] = {
+
+    // TODO: add query filters
+    // TODO: use compiled query
+    AddressQueries
+      .sortBy {
+        case (address: AddressTable) =>
+          address.mapOrderedColumn(sort)
+      }
+      .page(pageNumber, pageSize)
+      .withPerson
+      .sortBy {
+        case (address: AddressTable, _: PersonTable) =>
+          address.mapOrderedColumn(sort)
+      }
       .result
-      .headOption
   }
 
   /**
@@ -31,9 +99,8 @@ class AddressDataAccess extends MappedColumnTypes {
     * @param uuid
     * @return
     */
-  def findAddressAndPerson(uuid: String): DBIO[Seq[(Address, Person)]] = {
+  def find(uuid: String): DBIO[Seq[Address]] = {
     AddressQueries.filterByUuid(uuid)
-      .map(query => query.withPersons)
       .result
   }
 
@@ -42,7 +109,7 @@ class AddressDataAccess extends MappedColumnTypes {
     * @param address
     * @return
     */
-  def insertAddress(address: Address): DBIO[Address] = {
+  def insert(address: Address): DBIO[Address] = {
     AddressQueries.insertAddress += (
       address.uuid match {
         case Some(_) =>
@@ -65,20 +132,18 @@ class AddressDataAccess extends MappedColumnTypes {
     /**
       *
       */
-    val filterByUuid = Parameters[String]
-      .flatMap {
-        case (uuid) =>
-          this.filter(_.uuid === uuid)
-      }
+    val filterByUuid = Compiled((uuid: Rep[String]) =>
+      this
+        .filter(_.uuid === uuid)
+    )
 
     /**
       *
       */
-    val filterByCity = Parameters[String]
-      .flatMap {
-        case (city) =>
-          this.filter(_.city === city)
-      }
+    val filterByCity = Compiled((city: Rep[String]) =>
+      this
+        .filter(_.city === city)
+    )
 
     /**
       *

@@ -35,3 +35,6 @@ libraryDependencies ++= Seq(
 libraryDependencies += "com.typesafe.play" %% "play-test" % "2.5.10" % Test
 
 fork in run := true
+
+// Force to use Specs2 Framework
+testFrameworks := Seq(TestFrameworks.Specs2)

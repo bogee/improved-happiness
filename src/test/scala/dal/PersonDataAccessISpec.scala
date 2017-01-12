@@ -26,8 +26,9 @@ class PersonDataAccessISpec(env : Env) extends Specification {
       val dao = new PersonDataAccess
 
       // Act
-      val actFuture = database.run{
-        dao.findPerson("3104e3b9-708d-403d-ba9d-d78cd866bef6")
+      val actFuture = database.run {
+        dao.find("3104e3b9-708d-403d-ba9d-d78cd866bef6")
+          .map(_.headOption)
       }
 
       // Assert
@@ -44,13 +45,13 @@ class PersonDataAccessISpec(env : Env) extends Specification {
       val person = Person(
         name = "Baby Smith",
         age = 0,
-        addressUuid = "70ee1994-41a1-4b7b-85b2-924ffc836cb4",
-        uuid = Some("6d6de9fe-13ed-4d91-937a-314ef4630d04")
+        uuid = Some("6d6de9fe-13ed-4d91-937a-314ef4630d04"),
+        addressUuid = Some("70ee1994-41a1-4b7b-85b2-924ffc836cb4")
       )
 
       // Act
       val actFuture = database.run {
-        dao.insertPerson(person)
+        dao.insert(person)
       }
 
       // Assert
@@ -68,9 +69,9 @@ class PersonDataAccessISpec(env : Env) extends Specification {
             .which { person =>
               person.name mustEqual "Baby Smith"
               person.age mustEqual 0
-              person.addressUuid mustEqual "70ee1994-41a1-4b7b-85b2-924ffc836cb4"
               person.insertedAt must beSome[Instant]
               person.updatedAt must beSome[Instant]
+              person.addressUuid must beSome[String]("70ee1994-41a1-4b7b-85b2-924ffc836cb4")
             }
             .awaitFor(10.seconds)
         }
@@ -83,7 +84,7 @@ class PersonDataAccessISpec(env : Env) extends Specification {
 
       // Act
       val actFuture =  database.run {
-        dao.updatePersonAge("7b92b4cb-256c-4ef3-8651-b4bd20692e66", 24)
+        dao.updateAge("7b92b4cb-256c-4ef3-8651-b4bd20692e66", 24)
       }
 
       // Assert

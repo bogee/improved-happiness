@@ -3,10 +3,9 @@
 
 package domain
 
-import scala.concurrent.Future
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.driver.JdbcProfile
 
-trait IDataService {
-
-  def shutdown(): Future[Unit]
+trait IDataService extends HasDatabaseConfigProvider[JdbcProfile]{
 
 }

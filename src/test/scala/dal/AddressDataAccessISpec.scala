@@ -27,7 +27,8 @@ class AddressDataAccessISpec(env : Env) extends Specification {
 
       // Act
       val actFuture =  database.run {
-        dao.findAddress("70ee1994-41a1-4b7b-85b2-924ffc836cb4")
+        dao.find("70ee1994-41a1-4b7b-85b2-924ffc836cb4")
+          .map(_.headOption)
       }
 
       // Assert
@@ -49,7 +50,7 @@ class AddressDataAccessISpec(env : Env) extends Specification {
 
       // Act
       val actFuture = database.run {
-        dao.insertAddress(address)
+        dao.insert(address)
       }
 
       // Assert

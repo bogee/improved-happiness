@@ -15,13 +15,6 @@ class PersonTable(tag: Tag)
     *
     * @return
     */
-  def uuid: Rep[String] =
-    column[String]("UUID", O.PrimaryKey)
-
-  /**
-    *
-    * @return
-    */
   def name: Rep[String] =
     column[String]("NAME")
 
@@ -36,8 +29,8 @@ class PersonTable(tag: Tag)
     *
     * @return
     */
-  def addressUuid: Rep[String] =
-    column[String]("ADDRESS_UUID")
+  def uuid: Rep[String] =
+  column[String]("UUID", O.PrimaryKey)
 
   /**
     *
@@ -57,13 +50,20 @@ class PersonTable(tag: Tag)
     *
     * @return
     */
+  def addressUuid: Rep[String] =
+  column[String]("ADDRESS_UUID")
+
+  /**
+    *
+    * @return
+    */
   def * : ProvenShape[Person] = (
     name,
     age,
-    addressUuid,
     uuid.?,
     insertedAt.?,
-    updatedAt.?
+    updatedAt.?,
+    addressUuid.?
   ) <> (Person.tupled, Person.unapply)
 
   /**
@@ -74,3 +74,4 @@ class PersonTable(tag: Tag)
     foreignKey("ADDRESS", addressUuid, TableQuery[AddressTable])(_.uuid)
 
 }
+

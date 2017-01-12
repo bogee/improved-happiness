@@ -25,7 +25,13 @@ trait DatabaseHelper extends DatabaseActions {
 
   val dbDriver: String
 
-  protected def using[T <: { def close() }]
+  /**
+    *
+    * @param resource
+    * @param block
+    * @tparam T
+    */
+  private def using[T <: { def close() }]
   (resource: T)
   (block: T => Unit)
   {
@@ -36,6 +42,9 @@ trait DatabaseHelper extends DatabaseActions {
     }
   }
 
+  /**
+    *
+    */
   protected def createDatabase(): Unit = {
 
     val dbUrl = s"jdbc:postgresql://$dbHost:$dbPort/"
@@ -43,16 +52,18 @@ trait DatabaseHelper extends DatabaseActions {
     try {
       using(Database.forURL(url = dbUrl, user = dbUser, password = dbPassword, driver = dbDriver)) {
         db =>
-          Await.result(db.run(createDatabaseAction(dbName)), 10.seconds)
+          Await.result(db.run(createDatabase(dbName)), 10.seconds)
       }
     } catch {
       case e:PSQLException =>
         throw e
-      case e:Throwable => throw e
     }
 
   }
 
+  /**
+    *
+    */
   protected def dropDatabase(): Unit = {
 
     val dbUrl = s"jdbc:postgresql://$dbHost:$dbPort/"
@@ -60,16 +71,18 @@ trait DatabaseHelper extends DatabaseActions {
     try {
       using(Database.forURL(url = dbUrl, user = dbUser, password = dbPassword, driver = dbDriver)) {
         db =>
-          Await.result(db.run(dropDatabaseAction(dbName)), 10.seconds)
+          Await.result(db.run(dropDatabase(dbName)), 10.seconds)
       }
     } catch {
       case e:PSQLException =>
         throw e
-      case e:Throwable => throw e
     }
 
   }
 
+  /**
+    *
+    */
   protected def migrateDatabase(): Unit = {
 
     val dbUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
@@ -81,11 +94,13 @@ trait DatabaseHelper extends DatabaseActions {
     } catch {
       case e:PSQLException =>
         throw e
-      case e:Throwable => throw e
     }
 
   }
 
+  /**
+    *
+    */
   protected def populateDatabase(): Unit = {
 
     val dbUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
@@ -93,12 +108,49 @@ trait DatabaseHelper extends DatabaseActions {
     try {
       using(Database.forURL(url = dbUrl, user = dbUser, password = dbPassword, driver = dbDriver)) {
         db =>
-          Await.result(db.run(createInsertTestDataAction), 10.seconds)
+          Await.result(db.run(insertTestData), 10.seconds)
       }
     } catch {
       case e:PSQLException =>
         throw e
-      case e:Throwable => throw e
+    }
+
+  }
+
+  /**
+    *
+    */
+  protected def lockDatabase(): Unit = {
+
+    val dbUrl = s"jdbc:postgresql://$dbHost:$dbPort/"
+
+    try {
+      using(Database.forURL(url = dbUrl, user = dbUser, password = dbPassword, driver = dbDriver)) {
+        db =>
+          Await.result(db.run(lockDatabase(dbName)), 10.seconds)
+      }
+    } catch {
+      case e:PSQLException =>
+        throw e
+    }
+
+  }
+
+  /**
+    *
+    */
+  protected def terminateBackend(): Unit = {
+
+    val dbUrl = s"jdbc:postgresql://$dbHost:$dbPort/"
+
+    try {
+      using(Database.forURL(url = dbUrl, user = dbUser, password = dbPassword, driver = dbDriver)) {
+        db =>
+          Await.result(db.run(terminateBackendsForDatabase(dbName)), 10.seconds)
+      }
+    } catch {
+      case e:PSQLException =>
+        throw e
     }
 
   }

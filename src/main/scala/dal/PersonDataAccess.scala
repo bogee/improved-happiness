@@ -13,8 +13,87 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class PersonDataAccess extends MappedColumnTypes {
 
+  implicit class PersonTableExtensions(t: PersonTable) {
+
+    /**
+      *
+      * @param sort
+      * @return
+      */
+    def mapOrderedColumn(sort: (String, String)) = {
+
+      sort match {
+        case (c, d) if c.equalsIgnoreCase("AGE") && d.equalsIgnoreCase("ASC") =>
+          t.age.asc
+        case (c, d) if c.equalsIgnoreCase("AGE") && d.equalsIgnoreCase("DESC") =>
+          t.age.desc
+        case (c, d) if c.equalsIgnoreCase("INSERTED_AT") && d.equalsIgnoreCase("ASC") =>
+          t.insertedAt.asc
+        case (c, d) if c.equalsIgnoreCase("INSERTED_AT") && d.equalsIgnoreCase("DESC") =>
+          t.insertedAt.desc
+        case (c, d) if c.equalsIgnoreCase("NAME") && d.equalsIgnoreCase("ASC") =>
+          t.name.asc
+        case (c, d) if c.equalsIgnoreCase("NAME") && d.equalsIgnoreCase("DESC") =>
+          t.name.desc
+        case (c, d) if c.equalsIgnoreCase("UPDATED_AT") && d.equalsIgnoreCase("ASC") =>
+          t.updatedAt.asc
+        case (c, d) if c.equalsIgnoreCase("UPDATED_AT") && d.equalsIgnoreCase("DESC") =>
+          t.updatedAt.desc
+      }
+
+    }
+
+  }
+
   implicit class PersonQueryExtensions[C[_]](q: Query[PersonTable, Person, C]) {
-    def withAddress = q.join(TableQuery[AddressTable]).on(_.addressUuid === _.uuid)
+
+    /**
+      *
+      * @return
+      */
+    def withAddress = {
+
+      q.join(TableQuery[AddressTable]).on(_.addressUuid === _.uuid)
+
+    }
+
+    /**
+      *
+      * @param pageNumber
+      * @param pageSize
+      * @return
+      */
+    def page(pageNumber: Long, pageSize: Long) = {
+
+      q.drop((pageNumber - 1) * pageSize).take(pageSize)
+
+    }
+
+  }
+
+  /**
+    *
+    * @param sort
+    * @param pageNumber
+    * @param pageSize
+    * @return
+    */
+  def page(sort: (String, String), pageNumber: Long, pageSize: Long): DBIO[Seq[(Person, Address)]] = {
+
+    // TODO: add query filters
+    // TODO: use compiled query
+    PersonQueries
+      .sortBy {
+        case (person: PersonTable) =>
+          person.mapOrderedColumn(sort)
+      }
+      .page(pageNumber, pageSize)
+      .withAddress
+      .sortBy {
+        case (person: PersonTable, _: AddressTable) =>
+          person.mapOrderedColumn(sort)
+      }
+      .result
   }
 
   /**
@@ -22,30 +101,16 @@ class PersonDataAccess extends MappedColumnTypes {
     * @param uuid
     * @return
     */
-  def findPerson(uuid: String): DBIO[Option[Person]] = {
+  def find(uuid: String): DBIO[Seq[Person]] = {
     PersonQueries.filterByUuid(uuid)
       .result
-      .headOption
   }
-
-  /**
-    *
-    * @param uuid
-    * @return
-    */
-  def findPersonAndAddress(uuid: String): DBIO[Option[(Person, Address)]] = {
-    PersonQueries.filterByUuid(uuid)
-      .map(query => query.withAddress)
-      .result
-      .headOption
-  }
-
   /**
     *
     * @param person
     * @return
     */
-  def insertPerson(person: Person): DBIO[Person] = {
+  def insert(person: Person): DBIO[Person] = {
     PersonQueries.insertPerson += (
       person.uuid match {
         case Some(_) =>
@@ -71,7 +136,7 @@ class PersonDataAccess extends MappedColumnTypes {
     * @param age
     * @return
     */
-  def updatePersonAge(uuid: String, age: Int): DBIO[Option[Person]] = {
+  def updateAge(uuid: String, age: Int): DBIO[Option[Person]] = {
     for {
       Some(person: Person) <- PersonQueries.filterByUuid(uuid).result.headOption
       updatedPerson <- {
@@ -87,20 +152,18 @@ class PersonDataAccess extends MappedColumnTypes {
     /**
       *
       */
-    val filterByUuid = Parameters[String]
-      .flatMap {
-        case (uuid) =>
-          this.filter(_.uuid === uuid)
-      }
+    val filterByUuid = Compiled((uuid: Rep[String]) =>
+      this
+        .filter(_.uuid === uuid)
+    )
 
     /**
       *
       */
-    val filterByAge = Parameters[Int]
-      .flatMap {
-        case (age) =>
-          this.filter(_.age === age)
-      }
+    val filterByAge= Compiled((age: Rep[Int]) =>
+      this
+        .filter(_.age === age)
+    )
 
     /**
       *
